@@ -1,0 +1,56 @@
+- name: Deploy a web-application
+  hosts: db_and_webserver1, db_and_webserver2
+  tasks:
+    - name: Install all required dependencies
+      apt: name={{ item }} state=present
+      with_items:
+        - python
+        - python-setuptools
+        - python-dev
+        - build-essential
+        - python-pip
+        - python-mysqldb
+
+    - name: Install Mysql database
+      apt: name={{ item }} state=present
+      with_items:
+        - mysql-server
+        - mysql-client
+
+    - name: Start Mysql Server
+      shell: "service mysql start"
+    - name: Ensure mysql is enabled to run on startup  
+      service: name=mysql state=started enabled=true
+
+    - name: Create Application database
+      mysql_db:
+        name: employee_db
+        state: present
+        login_unix_socket: /var/run/mysqld/mysqld.sock
+        login_user: root
+        login_password:
+
+    - name: Create Database user
+      mysql_user: 
+        name: db_user
+        password: Passw0rd
+        priv: '*.*:ALL,GRANT'
+        state: present
+        host: '%'
+        
+    - name: Install Python Flask dependencies
+      pip:
+        name: "{{ item }}"
+        state: present
+      with_items:
+        - "install --upgrade setuptools"
+        - "install --upgrade pip"
+        - "flask"
+        - "flask-mysql"
+
+    - name: Copy source code
+      copy: src=app.py dest=/opt/app.py
+
+    - name: Start Web Server
+      shell: FLASK_APP=/opt/app.py nohup flask run --host 0.0.0.0 &
+
