@@ -1,5 +1,9 @@
 - name: Deploy a web-application
   hosts: db_and_webserver1, db_and_webserver2
+  vars:
+    db_name: employee_db
+    db_user: db_user
+    db_password: Passw0rd
   tasks:
     - name: Install all required dependencies
       apt: name={{ item }} state=present
@@ -24,16 +28,13 @@
 
     - name: Create Application database
       mysql_db:
-        name: employee_db
+        name: "{{ db_name }}"
         state: present
-        login_unix_socket: /var/run/mysqld/mysqld.sock
-        login_user: root
-        login_password:
 
     - name: Create Database user
       mysql_user: 
-        name: db_user
-        password: Passw0rd
+        name: "{{ db_user }}"
+        password: "{{ db_password }}"
         priv: '*.*:ALL,GRANT'
         state: present
         host: '%'
