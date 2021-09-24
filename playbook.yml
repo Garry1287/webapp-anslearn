@@ -1,9 +1,5 @@
 - name: Deploy a web-application
   hosts: db_and_webserver1, db_and_webserver2
-  vars:
-    db_name: employee_db
-    db_user: db_user
-    db_password: Passw0rd
   tasks:
     - name: Install all required dependencies
       apt: name={{ item }} state=present
@@ -15,43 +11,7 @@
         - python-pip
         - python-mysqldb
 
-    - name: Install Mysql database
-      apt: name={{ item }} state=present
-      with_items:
-        - mysql-server
-        - mysql-client
-
-    - name: Start Mysql Server
-      shell: "service mysql start"
-    - name: Ensure mysql is enabled to run on startup  
-      service: name=mysql state=started enabled=true
-
-    - name: Create Application database
-      mysql_db:
-        name: "{{ db_name }}"
-        state: present
-
-    - name: Create Database user
-      mysql_user: 
-        name: "{{ db_user }}"
-        password: "{{ db_password }}"
-        priv: '*.*:ALL,GRANT'
-        state: present
-        host: '%'
+    - include: tasks/deploy_db.yml
+    - include: tasks/deploy_web.yml
         
-    - name: Install Python Flask dependencies
-      pip:
-        name: "{{ item }}"
-        state: present
-      with_items:
-        - "install --upgrade setuptools"
-        - "install --upgrade pip"
-        - "flask"
-        - "flask-mysql"
-
-    - name: Copy source code
-      copy: src=app.py dest=/opt/app.py
-
-    - name: Start Web Server
-      shell: FLASK_APP=/opt/app.py nohup flask run --host 0.0.0.0 &
 
